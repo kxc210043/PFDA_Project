@@ -1,4 +1,5 @@
-# Title
+# Title: 
+Van vs Zombies
 
 ## Repository
 Link: https://github.com/kxc210043/PFDA_Project.git 
@@ -38,4 +39,4 @@ Minimal Viable Outcome:
 
 - Week N (Final)
   1. Finish and play test
-  2. Hopefully its good
+  2. Hopefully its finished and good
