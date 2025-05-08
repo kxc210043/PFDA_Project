@@ -1,5 +1,6 @@
 import pygame
 import random
+import os
 
 pygame.init()
 
@@ -18,26 +19,26 @@ BUTTON_HOVER_COL = (150, 255, 200)
 TEXT_COL = WHITE
 ROAD_COLOR = (50, 50, 50)
 
-
+# Game states
 main_menu = True
 game_paused = False
 
-
+# Fonts
 font = pygame.font.SysFont("arialblack", 40)
 small_font = pygame.font.SysFont("Arial", 20)
 
-
+# Button
 button_rect = pygame.Rect(300, 250, 200, 60)
 
 # Game settings
 van_hp = 100
-van_speed = 10
-zombie_speed = 7
+van_speed = 5
+zombie_speed = 3
 zombie_types = ["normal", "semi_mutated", "special_mutated"]
 
 # Road scroll
 road_scroll = 0
-line_spacing = 100
+line_spacing = 40
 
 # Zombie spawn timing
 zombie_spawn_delay = 1500  # milliseconds
@@ -48,12 +49,30 @@ def draw_text(text, font, color, x, y):
     img = font.render(text, True, color)
     screen.blit(img, (x, y))
 
-# Van class
+# Van class (using an image)
 class Van(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((60, 40))
-        self.image.fill(GREEN)
+
+        # Check if the image exists before loading it
+        if not os.path.isfile('van.png'):
+            print("van.png not found!")
+            pygame.quit()
+            exit()
+
+        try:
+            self.image = pygame.image.load('van.png').convert_alpha()  # Load the van image
+        except pygame.error as e:
+            print(f"Error loading image: {e}")
+            pygame.quit()
+            exit()
+
+        # Rotate the image 90 degrees clockwise
+        self.image = pygame.transform.rotate(self.image, -90)  # Rotate by -90 degrees (clockwise)
+
+        # Resize the image to make it smaller
+        self.image = pygame.transform.scale(self.image, (60, 40))  # Adjust the width and height as needed
+
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH // 2, HEIGHT - 50)
         self.health = van_hp
@@ -162,7 +181,7 @@ while run:
             van.update(keys)
             zombies.update()
 
-            # Spawn new zombie if enough time has passed
+            # Spawn new zombie
             current_time = pygame.time.get_ticks()
             if current_time - last_zombie_spawn_time > zombie_spawn_delay:
                 zombie_type = random.choice(zombie_types)
@@ -171,7 +190,7 @@ while run:
                 zombies.add(new_zombie)
                 last_zombie_spawn_time = current_time
 
-        # Collision check
+        # Check collisions
         collided_zombies = pygame.sprite.spritecollide(van, zombies, True)
         for zombie in collided_zombies:
             van.health -= zombie.damage
@@ -202,3 +221,4 @@ while run:
     pygame.display.update()
 
 pygame.quit()
+
