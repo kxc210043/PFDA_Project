@@ -8,7 +8,7 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Van vs Zombies")
 
-
+# Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -29,22 +29,26 @@ small_font = pygame.font.SysFont("Arial", 20)
 
 button_rect = pygame.Rect(300, 250, 200, 60)
 
-
+# Game settings
 van_hp = 100
 van_speed = 10
-zombie_speed = 8
+zombie_speed = 7
 zombie_types = ["normal", "semi_mutated", "special_mutated"]
 
 # Road scroll
 road_scroll = 0
-line_spacing = 40
+line_spacing = 100
 
+# Zombie spawn timing
+zombie_spawn_delay = 1500  # milliseconds
+last_zombie_spawn_time = 0
 
+# Helper to draw text
 def draw_text(text, font, color, x, y):
     img = font.render(text, True, color)
     screen.blit(img, (x, y))
 
-
+# Van class
 class Van(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -90,18 +94,18 @@ class Zombie(pygame.sprite.Sprite):
             self.rect.x = random.randint(0, WIDTH - 40)
             self.rect.y = random.randint(-150, -40)
 
-
+# Initialize game loop
 run = True
 clock = pygame.time.Clock()
 
-
+# Sprite groups
 all_sprites = pygame.sprite.Group()
 zombies = pygame.sprite.Group()
 van = None
 
 # Start the game
 def start_game():
-    global all_sprites, zombies, van, road_scroll
+    global all_sprites, zombies, van, road_scroll, last_zombie_spawn_time
     all_sprites = pygame.sprite.Group()
     zombies = pygame.sprite.Group()
     van = Van()
@@ -112,11 +116,11 @@ def start_game():
         all_sprites.add(zombie)
         zombies.add(zombie)
     road_scroll = 0
+    last_zombie_spawn_time = pygame.time.get_ticks()
 
 # Main game loop
 while run:
     clock.tick(60)
-
 
     if main_menu:
         screen.fill((52, 78, 91))
@@ -138,16 +142,15 @@ while run:
         draw_text("Game Paused", font, TEXT_COL, 260, 250)
 
     else:
-        # Draw road background
         screen.fill(ROAD_COLOR)
 
         # Scroll road lines
         if van.health > 0:
             road_scroll += 5
-            if road_scroll >= line_spacing: 
+            if road_scroll >= line_spacing:
                 road_scroll = 0
 
-        # Draw dashed white lines
+        # Draw dashed lines
         line_width = 10
         line_height = 30
         line_x = WIDTH // 2 - line_width // 2
@@ -159,15 +162,24 @@ while run:
             van.update(keys)
             zombies.update()
 
-        # Check for collisions
+            # Spawn new zombie if enough time has passed
+            current_time = pygame.time.get_ticks()
+            if current_time - last_zombie_spawn_time > zombie_spawn_delay:
+                zombie_type = random.choice(zombie_types)
+                new_zombie = Zombie(zombie_type)
+                all_sprites.add(new_zombie)
+                zombies.add(new_zombie)
+                last_zombie_spawn_time = current_time
+
+        # Collision check
         collided_zombies = pygame.sprite.spritecollide(van, zombies, True)
         for zombie in collided_zombies:
             van.health -= zombie.damage
 
-
+        # Draw sprites
         all_sprites.draw(screen)
 
-
+        # Health
         health_text = small_font.render(f"Van Health: {van.health}", True, WHITE)
         screen.blit(health_text, (10, 10))
 
@@ -179,6 +191,7 @@ while run:
             main_menu = True
             game_paused = False
 
+    # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
