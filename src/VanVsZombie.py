@@ -54,7 +54,7 @@ class Van(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        # Check if the image exists before loading it
+       
         if not os.path.isfile('van.png'):
             print("van.png not found!")
             pygame.quit()
@@ -71,7 +71,7 @@ class Van(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, -90)  # Rotate by -90 degrees (clockwise)
 
         # Resize the image to make it smaller
-        self.image = pygame.transform.scale(self.image, (60, 40))  # Adjust the width and height as needed
+        self.image = pygame.transform.scale(self.image, (240, 160))  # Adjust the width and height as needed
 
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH // 2, HEIGHT - 50)
