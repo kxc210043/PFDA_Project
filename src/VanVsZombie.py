@@ -4,7 +4,7 @@ import os
 
 pygame.init()
 
-# Screen setup
+
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Van vs Zombies")
@@ -40,7 +40,7 @@ zombie_types = ["normal", "semi_mutated", "special_mutated"]
 road_scroll = 0
 line_spacing = 100
 
-# Zombie spawn timing
+
 zombie_spawn_delay = 1500  # milliseconds
 last_zombie_spawn_time = 0
 
@@ -54,28 +54,27 @@ class Van(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-       
         if not os.path.isfile('van.png'):
             print("van.png not found!")
             pygame.quit()
             exit()
 
         try:
-            self.image = pygame.image.load('van.png').convert_alpha()  # Load the van image
+            self.image = pygame.image.load('van.png').convert_alpha()
         except pygame.error as e:
             print(f"Error loading image: {e}")
             pygame.quit()
             exit()
 
-        # Rotate the image 90 degrees clockwise
-        self.image = pygame.transform.rotate(self.image, -90)  # Rotate by -90 degrees (clockwise)
-
-        # Resize the image to make it smaller
-        self.image = pygame.transform.scale(self.image, (240, 160))  # Adjust the width and height as needed
-
+        self.image = pygame.transform.rotate(self.image, -90)
+        self.image = pygame.transform.scale(self.image, (240, 160))
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH // 2, HEIGHT - 50)
         self.health = van_hp
+
+
+        self.collision_rect = pygame.Rect(0, 0, self.rect.width // 2, self.rect.height // 2)
+        self.update_collision_rect()
 
     def update(self, keys):
         if keys[pygame.K_a] and self.rect.left > 0:
@@ -86,6 +85,12 @@ class Van(pygame.sprite.Sprite):
             self.rect.y -= van_speed
         if keys[pygame.K_s] and self.rect.bottom < HEIGHT:
             self.rect.y += van_speed
+
+        self.rect.clamp_ip(screen.get_rect())
+        self.update_collision_rect()
+
+    def update_collision_rect(self):
+        self.collision_rect.center = self.rect.center
 
 # Zombie class
 class Zombie(pygame.sprite.Sprite):
@@ -113,15 +118,12 @@ class Zombie(pygame.sprite.Sprite):
             self.rect.x = random.randint(0, WIDTH - 40)
             self.rect.y = random.randint(-150, -40)
 
-#game loop
+
 run = True
 clock = pygame.time.Clock()
-
-
 all_sprites = pygame.sprite.Group()
 zombies = pygame.sprite.Group()
 van = None
-
 
 def start_game():
     global all_sprites, zombies, van, road_scroll, last_zombie_spawn_time
@@ -137,7 +139,7 @@ def start_game():
     road_scroll = 0
     last_zombie_spawn_time = pygame.time.get_ticks()
 
-# Main game loop
+
 while run:
     clock.tick(60)
 
@@ -163,13 +165,12 @@ while run:
     else:
         screen.fill(ROAD_COLOR)
 
-        
         if van.health > 0:
             road_scroll += 5
             if road_scroll >= line_spacing:
                 road_scroll = 0
 
-        # Draw dashed lines
+        # Draw road lines
         line_width = 10
         line_height = 50
         line_x = WIDTH // 2 - line_width // 2
@@ -190,19 +191,21 @@ while run:
                 zombies.add(new_zombie)
                 last_zombie_spawn_time = current_time
 
-        # Check collisions
-        collided_zombies = pygame.sprite.spritecollide(van, zombies, True)
+        
+        collided_zombies = [z for z in zombies if van.collision_rect.colliderect(z.rect)]
         for zombie in collided_zombies:
+            zombies.remove(zombie)
+            all_sprites.remove(zombie)
             van.health -= zombie.damage
 
-        
+        #
         all_sprites.draw(screen)
 
-        # Health
+        
         health_text = small_font.render(f"Van Health: {van.health}", True, WHITE)
         screen.blit(health_text, (10, 10))
 
-        # Game over
+        
         if van.health <= 0:
             draw_text("GAME OVER!", font, RED, WIDTH // 2 - 140, HEIGHT // 2 - 20)
             pygame.display.flip()
@@ -210,7 +213,6 @@ while run:
             main_menu = True
             game_paused = False
 
-    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
@@ -221,4 +223,5 @@ while run:
     pygame.display.update()
 
 pygame.quit()
+
 
