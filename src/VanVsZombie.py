@@ -73,7 +73,7 @@ class Van(pygame.sprite.Sprite):
         self.health = van_hp
 
 
-        self.collision_rect = pygame.Rect(0, 0, self.rect.width // 2, self.rect.height // 2)
+        self.collision_rect = pygame.Rect(0, 0, self.rect.width // 3.5, self.rect.height // 3.5)
         self.update_collision_rect()
 
     def update(self, keys):
