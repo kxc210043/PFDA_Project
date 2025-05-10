@@ -92,19 +92,31 @@ class Van(pygame.sprite.Sprite):
     def update_collision_rect(self):
         self.collision_rect.center = self.rect.center
 
-# Zombie class
+
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, zombie_type):
         super().__init__()
         self.zombie_type = zombie_type
-        self.image = pygame.Surface((40, 40))
+        self.image = pygame.Surface((60, 60))
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, WIDTH - 40)
-        self.rect.y = random.randint(-150, -40)
+        self.rect.x = random.randint(0, WIDTH - 60)
+        self.rect.y = random.randint(-150, -60)
 
         if self.zombie_type == "normal":
             self.damage = 5
-            self.image.fill((150, 0, 0))
+            if os.path.isfile("nor_zom.png"):
+                try:
+                    self.image = pygame.image.load("nor_zom.png").convert_alpha()
+                    self.image = pygame.transform.scale(self.image, (60, 60))
+                    self.image = pygame.transform.rotate(self.image, -90)
+                except pygame.error as e:
+                    print(f"Failed to load nor_zom.png: {e}")
+                    self.image = pygame.Surface((60, 60))
+                    self.image.fill((150, 0, 0))
+            else:
+                print("Warning: nor_zom.png not found, using fallback color.")
+                self.image = pygame.Surface((60, 60))
+                self.image.fill((150, 0, 0))
         elif self.zombie_type == "semi_mutated":
             self.damage = 10
             self.image.fill((255, 100, 100))
@@ -170,7 +182,7 @@ while run:
             if road_scroll >= line_spacing:
                 road_scroll = 0
 
-        # Draw road lines
+
         line_width = 10
         line_height = 50
         line_x = WIDTH // 2 - line_width // 2
@@ -182,7 +194,7 @@ while run:
             van.update(keys)
             zombies.update()
 
-            # Spawn new zombie
+
             current_time = pygame.time.get_ticks()
             if current_time - last_zombie_spawn_time > zombie_spawn_delay:
                 zombie_type = random.choice(zombie_types)
@@ -191,21 +203,21 @@ while run:
                 zombies.add(new_zombie)
                 last_zombie_spawn_time = current_time
 
-        
+
         collided_zombies = [z for z in zombies if van.collision_rect.colliderect(z.rect)]
         for zombie in collided_zombies:
             zombies.remove(zombie)
             all_sprites.remove(zombie)
             van.health -= zombie.damage
 
-        #
+
         all_sprites.draw(screen)
 
-        
+
         health_text = small_font.render(f"Van Health: {van.health}", True, WHITE)
         screen.blit(health_text, (10, 10))
 
-        
+
         if van.health <= 0:
             draw_text("GAME OVER!", font, RED, WIDTH // 2 - 140, HEIGHT // 2 - 20)
             pygame.display.flip()
