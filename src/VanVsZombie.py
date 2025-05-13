@@ -4,11 +4,9 @@ import os
 
 pygame.init()
 
-
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Van vs Zombies")
-
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -17,14 +15,11 @@ BUTTON_HOVER_COL = (150, 255, 200)
 TEXT_COL = WHITE
 ROAD_COLOR = (50, 50, 50)
 
-
 main_menu = True
 game_paused = False
 
-
 font = pygame.font.SysFont("arialblack", 40)
 small_font = pygame.font.SysFont("Arial", 20)
-
 
 button_rect = pygame.Rect(300, 250, 200, 60)
 
@@ -34,20 +29,24 @@ van_speed = 7
 zombie_speed = 5
 zombie_types = ["normal", "semi_mutated", "special_mutated"]
 
-# Road scroll
 road_scroll = 0
 line_spacing = 100
 
-# Spawn timing
 zombie_spawn_delay = 1500
 last_zombie_spawn_time = 0
 
-# Text function
+# Load start menu background
+if not os.path.isfile("start.png"):
+    print("start.png not found! Exiting...")
+    pygame.quit()
+    exit()
+start_background = pygame.image.load("start.png").convert()
+start_background = pygame.transform.scale(start_background, (WIDTH, HEIGHT))
+
 def draw_text(text, font, color, x, y):
     img = font.render(text, True, color)
     screen.blit(img, (x, y))
 
-# Van class
 class Van(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -79,7 +78,6 @@ class Van(pygame.sprite.Sprite):
     def update_collision_rect(self):
         self.collision_rect.center = self.rect.center
 
-# Zombie class
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, zombie_type):
         super().__init__()
@@ -94,7 +92,7 @@ class Zombie(pygame.sprite.Sprite):
                 self.damage = 5
                 if os.path.isfile("nor_zom.png"):
                     self.image = pygame.image.load("nor_zom.png").convert_alpha()
-                    self.image = pygame.transform.scale(self.image, (60, 60))
+                    self.image = pygame.transform.scale(self.image, (70, 70))
                     self.image = pygame.transform.rotate(self.image, -90)
                 else:
                     raise FileNotFoundError("nor_zom.png not found")
@@ -102,7 +100,7 @@ class Zombie(pygame.sprite.Sprite):
                 self.damage = 10
                 if os.path.isfile("sem_zom.png"):
                     self.image = pygame.image.load("sem_zom.png").convert_alpha()
-                    self.image = pygame.transform.scale(self.image, (60, 60))
+                    self.image = pygame.transform.scale(self.image, (80, 75))
                     self.image = pygame.transform.rotate(self.image, -90)
                 else:
                     raise FileNotFoundError("sem_zom.png not found")
@@ -110,7 +108,7 @@ class Zombie(pygame.sprite.Sprite):
                 self.damage = 20
                 if os.path.isfile("mut_zom.png"):
                     self.image = pygame.image.load("mut_zom.png").convert_alpha()
-                    self.image = pygame.transform.scale(self.image, (60, 60))
+                    self.image = pygame.transform.scale(self.image, (100, 90))
                     self.image = pygame.transform.rotate(self.image, -90)
                 else:
                     raise FileNotFoundError("mut_zom.png not found")
@@ -150,7 +148,7 @@ while run:
     clock.tick(60)
 
     if main_menu:
-        screen.fill((52, 78, 91))
+        screen.blit(start_background, (0, 0))
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()
         pygame.draw.rect(screen, BUTTON_HOVER_COL if button_rect.collidepoint(mouse_pos) else BUTTON_COL, button_rect, border_radius=10)
@@ -178,7 +176,6 @@ while run:
             van.update(keys)
             zombies.update()
 
-            # Spawn zombies
             current_time = pygame.time.get_ticks()
             if current_time - last_zombie_spawn_time > zombie_spawn_delay:
                 zombie = Zombie(random.choice(zombie_types))
@@ -186,7 +183,6 @@ while run:
                 all_sprites.add(zombie)
                 last_zombie_spawn_time = current_time
 
-        # Check collisions
         for zombie in [z for z in zombies if van.collision_rect.colliderect(z.rect)]:
             van.health -= zombie.damage
             zombies.remove(zombie)
@@ -212,5 +208,3 @@ while run:
     pygame.display.update()
 
 pygame.quit()
-
-
