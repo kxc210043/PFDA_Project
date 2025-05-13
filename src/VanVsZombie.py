@@ -8,11 +8,13 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Van vs Zombies")
 
+BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+YELLOW =(255, 255, 0)
 RED = (255, 0, 0)
 BUTTON_COL = (100, 200, 150)
 BUTTON_HOVER_COL = (150, 255, 200)
-TEXT_COL = WHITE
+TEXT_COL = BLACK
 ROAD_COLOR = (50, 50, 50)
 
 main_menu = True
@@ -23,7 +25,6 @@ small_font = pygame.font.SysFont("Arial", 20)
 
 button_rect = pygame.Rect(300, 250, 200, 60)
 
-# Game variables
 van_hp = 100
 van_speed = 7
 zombie_speed = 5
@@ -35,17 +36,14 @@ line_spacing = 100
 zombie_spawn_delay = 1500
 last_zombie_spawn_time = 0
 
-# Load start menu background
-if not os.path.isfile("start.png"):
-    print("start.png not found! Exiting...")
-    pygame.quit()
-    exit()
-start_background = pygame.image.load("start.png").convert()
-start_background = pygame.transform.scale(start_background, (WIDTH, HEIGHT))
-
 def draw_text(text, font, color, x, y):
     img = font.render(text, True, color)
     screen.blit(img, (x, y))
+
+def draw_health_bar(health, max_health, x, y, width, height):
+    pygame.draw.rect(screen, (255, 0, 0), (x, y, width, height))
+    health_width = width * (health / max_health)
+    pygame.draw.rect(screen, (0, 255, 0), (x, y, health_width, height))
 
 class Van(pygame.sprite.Sprite):
     def __init__(self):
@@ -64,15 +62,14 @@ class Van(pygame.sprite.Sprite):
         self.update_collision_rect()
 
     def update(self, keys):
-        if keys[pygame.K_a] and self.rect.left > 0:
+        if keys[pygame.K_a] and self.rect.x > -self.rect.width // 2:
             self.rect.x -= van_speed
-        if keys[pygame.K_d] and self.rect.right < WIDTH:
+        if keys[pygame.K_d] and self.rect.x < WIDTH - self.rect.width // 2:
             self.rect.x += van_speed
-        if keys[pygame.K_w] and self.rect.top > 0:
+        if keys[pygame.K_w] and self.rect.y > -self.rect.height // 2:
             self.rect.y -= van_speed
-        if keys[pygame.K_s] and self.rect.bottom < HEIGHT:
+        if keys[pygame.K_s] and self.rect.y < HEIGHT - self.rect.height // 2:
             self.rect.y += van_speed
-        self.rect.clamp_ip(screen.get_rect())
         self.update_collision_rect()
 
     def update_collision_rect(self):
@@ -100,7 +97,7 @@ class Zombie(pygame.sprite.Sprite):
                 self.damage = 10
                 if os.path.isfile("sem_zom.png"):
                     self.image = pygame.image.load("sem_zom.png").convert_alpha()
-                    self.image = pygame.transform.scale(self.image, (80, 75))
+                    self.image = pygame.transform.scale(self.image, (80, 78))
                     self.image = pygame.transform.rotate(self.image, -90)
                 else:
                     raise FileNotFoundError("sem_zom.png not found")
@@ -122,12 +119,12 @@ class Zombie(pygame.sprite.Sprite):
             self.rect.x = random.randint(0, WIDTH - 60)
             self.rect.y = random.randint(-150, -60)
 
-# Game state
 run = True
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 zombies = pygame.sprite.Group()
 van = None
+
 
 def start_game():
     global all_sprites, zombies, van, road_scroll, last_zombie_spawn_time
@@ -143,12 +140,16 @@ def start_game():
     road_scroll = 0
     last_zombie_spawn_time = pygame.time.get_ticks()
 
-# Main loop
+
 while run:
     clock.tick(60)
 
     if main_menu:
-        screen.blit(start_background, (0, 0))
+        screen.fill((52, 78, 91))
+        if os.path.isfile("start.png"):
+            start_bg = pygame.image.load("start.png").convert()
+            start_bg = pygame.transform.scale(start_bg, (WIDTH, HEIGHT))
+            screen.blit(start_bg, (0, 0))
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()
         pygame.draw.rect(screen, BUTTON_HOVER_COL if button_rect.collidepoint(mouse_pos) else BUTTON_COL, button_rect, border_radius=10)
@@ -166,16 +167,17 @@ while run:
         if van.health > 0:
             road_scroll = (road_scroll + 5) % line_spacing
 
-        # Draw road lines
+        # Road lines
         line_x = WIDTH // 2 - 5
         for y in range(-50, HEIGHT + line_spacing, line_spacing):
-            pygame.draw.rect(screen, WHITE, (line_x, y + road_scroll, 10, 50))
+            pygame.draw.rect(screen, YELLOW, (line_x, y + road_scroll, 10, 50))
 
         keys = pygame.key.get_pressed()
         if van.health > 0:
             van.update(keys)
             zombies.update()
 
+            
             current_time = pygame.time.get_ticks()
             if current_time - last_zombie_spawn_time > zombie_spawn_delay:
                 zombie = Zombie(random.choice(zombie_types))
@@ -188,8 +190,10 @@ while run:
             zombies.remove(zombie)
             all_sprites.remove(zombie)
 
+        # Draw health bar
+        draw_health_bar(van.health, van_hp, 10, 10, 200, 20)
+
         all_sprites.draw(screen)
-        screen.blit(small_font.render(f"Van Health: {van.health}", True, WHITE), (10, 10))
 
         if van.health <= 0:
             draw_text("GAME OVER!", font, RED, WIDTH // 2 - 140, HEIGHT // 2 - 20)
@@ -208,3 +212,4 @@ while run:
     pygame.display.update()
 
 pygame.quit()
+
